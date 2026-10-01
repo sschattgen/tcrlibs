@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tcrlibs"
+version = "0.1.0"
+description = "Tools for counting TCR sequencing reads against reference libraries."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "TCRlibs" }]
+dependencies = [
+    "pandas",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[project.scripts]
+tcrlibs = "tcrlibs.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

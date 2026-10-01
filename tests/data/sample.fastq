@@ -1,0 +1,16 @@
+@read1 matches seq1
+ACGTACGTAC
++
+IIIIIIIIII
+@read2 matches seq2
+TTTTGGGGCC
++
+IIIIIIIIII
+@read3 matches seq1 but low quality dropped
+ACGTACGTAC
++
+##########
+@read4 no match
+AAAAAAAAAA
++
+IIIIIIIIII
