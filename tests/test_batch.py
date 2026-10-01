@@ -94,3 +94,28 @@ def test_batch_command_end_to_end(tmp_path):
     assert rc == 0
     assert (out_dir / "SampleA_S1_counts.csv").exists()
     assert (out_dir / "SampleB_S2_counts.csv").exists()
+
+def test_discover_samples_custom_pattern(tmp_path):
+    fastq_dir = _make_fastq_dir(tmp_path)
+    # Write a differently-named file that only matches a custom pattern.
+    _write_fastq_gz(fastq_dir / "SampleC.R1.fastq.gz", SAMPLE_A_READS)
+
+    samples = discover_samples(str(fastq_dir), pattern="*.R1.fastq.gz")
+    names = [name for _, name in samples]
+    assert names == ["SampleC"]
+
+def test_run_batch_custom_pattern(tmp_path):
+    fastq_dir = tmp_path / "fastqs"
+    fastq_dir.mkdir()
+    _write_fastq_gz(fastq_dir / "SampleC.R1.fastq.gz", SAMPLE_B_READS)
+    out_dir = tmp_path / "outs"
+
+    summary = run_batch(
+        input_dir=str(fastq_dir),
+        output_dir=str(out_dir),
+        library_path=str(LIB_CSV),
+        pattern="*.R1.fastq.gz",
+        trim_start=0,
+    )
+    assert summary.processed == 1
+    assert (out_dir / "SampleC_counts.csv").exists()

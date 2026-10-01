@@ -91,7 +91,15 @@ tcrlibs batch \
   --trim-start 42 \
   --revcomp
 ```
+Use `--pattern` to match a different FASTQ naming scheme (default `*R1_001.fastq.gz`):
 
+```bash
+tcrlibs batch \
+  -i /path/to/fastq \
+  -o ./outs \
+  -l library_table_clean.csv \
+  --pattern "*_R1.fastq.gz"
+```
 See `examples/run.zsh` for a complete batch invocation.
 
 ## Development

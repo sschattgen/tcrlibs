@@ -95,6 +95,7 @@ def _add_batch_parser(subparsers) -> None:
     p.add_argument("-i", "--input-dir", required=True, help="Directory containing FASTQ files")
     p.add_argument("-o", "--output-dir", required=True, help="Directory to save output CSVs")
     p.add_argument("-l", "--library", required=True, help="Path to reference library CSV")
+    p.add_argument("--pattern", default="*R1_001.fastq.gz", help="Glob pattern for FASTQ files within the input dir (default: %(default)s)")
     p.add_argument("--trim-start", type=int, default=0, help="Bases to trim from start (default: 0)")
     p.add_argument("--trim-length", type=int, default=None, help="Length to keep (default: match library length)")
     p.add_argument("--revcomp", action="store_true", help="Search for reverse complement")
