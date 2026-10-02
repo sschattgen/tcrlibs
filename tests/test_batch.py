@@ -119,3 +119,41 @@ def test_run_batch_custom_pattern(tmp_path):
     )
     assert summary.processed == 1
     assert (out_dir / "SampleC_counts.csv").exists()
+
+
+def test_batch_command_custom_pattern(tmp_path):
+    """CLI `--pattern` is forwarded to discovery and sample naming.
+
+    **Validates: Requirements 6.1, 6.2**
+    """
+    import shutil
+
+    fastq_dir = tmp_path / "fastqs"
+    fastq_dir.mkdir()
+    # gzip the shared sample.fastq fixture under a non-default name.
+    with open(DATA_DIR / "sample.fastq", "rb") as src, gzip.open(
+        fastq_dir / "SampleC.R1.fastq.gz", "wb"
+    ) as dst:
+        shutil.copyfileobj(src, dst)
+    out_dir = tmp_path / "outs"
+
+    rc = main(
+        [
+            "batch",
+            "-i",
+            str(fastq_dir),
+            "-o",
+            str(out_dir),
+            "-l",
+            str(LIB_CSV),
+            "--pattern",
+            "*.R1.fastq.gz",
+            "--trim-start",
+            "0",
+        ]
+    )
+    assert rc == 0
+    # Suffix ".R1.fastq.gz" is stripped, leaving "SampleC".
+    counts = _read_counts(out_dir / "SampleC_counts.csv")
+    # read3 is dropped by QC, read4 matches nothing.
+    assert counts == {"seq1": 1, "seq2": 1}

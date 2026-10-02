@@ -6,6 +6,7 @@ import sys
 from . import __version__
 from . import batch as batch_mod
 from . import counting
+from . import diagnose as diagnose_mod
 from . import prep as prep_mod
 
 
@@ -122,6 +123,7 @@ def _run_batch(args) -> int:
         input_dir=args.input_dir,
         output_dir=args.output_dir,
         library_path=args.library,
+        pattern=args.pattern,
         trim_start=args.trim_start,
         trim_length=args.trim_length,
         revcomp=args.revcomp,
@@ -145,18 +147,64 @@ def _add_prep_parser(subparsers) -> None:
     p.add_argument("--output", required=True, help="Path to write the trimmed library CSV (ID, Sequence)")
     p.add_argument("--seed", required=True, help="Constant seed region to split on (case-insensitive)")
     p.add_argument("--read-length", type=int, default=150, help="Sequencer read length (default: 150)")
+    p.add_argument(
+        "--skip-missing-seed",
+        action="store_true",
+        default=False,
+        help="Drop rows lacking the seed (with a warning) instead of failing (default: off)",
+    )
     p.set_defaults(func=_run_prep)
 
 
 def _run_prep(args) -> int:
-    n = prep_mod.trim_targets(
-        input_csv=args.input,
-        output_csv=args.output,
-        seed=args.seed,
-        read_length=args.read_length,
-    )
+    try:
+        n = prep_mod.trim_targets(
+            input_csv=args.input,
+            output_csv=args.output,
+            seed=args.seed,
+            read_length=args.read_length,
+            skip_missing_seed=args.skip_missing_seed,
+        )
+    except ValueError as exc:  # includes SeedNotFoundError
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
     print(f"Wrote {n} trimmed targets to {args.output}.")
     return 0
+
+
+def _add_diagnose_parser(subparsers) -> None:
+    p = subparsers.add_parser(
+        "diagnose-library",
+        help="Report how a seed matches a full library (writes nothing).",
+        description=(
+            "Diagnose seed matches (both orientations), occurrence counts, target lengths "
+            "and duplicate targets for a full library. Exits 1 if any row lacks the seed."
+        ),
+    )
+    p.add_argument("--input", required=True, help="Path to full library CSV (needs ID and Sequence columns)")
+    p.add_argument("--seed", required=True, help="Constant seed region to check (case-insensitive)")
+    p.add_argument("--read-length", type=int, default=150, help="Sequencer read length (default: 150)")
+    p.add_argument(
+        "--targets",
+        default=None,
+        help="Optional trimmed targets CSV (ID, Sequence) to check for duplicates/lengths",
+    )
+    p.set_defaults(func=_run_diagnose)
+
+
+def _run_diagnose(args) -> int:
+    try:
+        d = diagnose_mod.diagnose_library(
+            input_csv=args.input,
+            seed=args.seed,
+            read_length=args.read_length,
+            targets_csv=args.targets,
+        )
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    print(diagnose_mod.format_report(d))
+    return 0 if d.usable else 1
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -170,6 +218,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_count_parser(subparsers)
     _add_batch_parser(subparsers)
     _add_prep_parser(subparsers)
+    _add_diagnose_parser(subparsers)
     return parser
 
 

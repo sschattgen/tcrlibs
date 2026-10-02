@@ -5,6 +5,7 @@ Tools for counting TCR sequencing reads against reference libraries.
 TCRlibs packages a small bioinformatics workflow as a single command-line tool:
 
 - `prep-library` — trim full-length library sequences down to read-length targets
+- `diagnose-library` — check how a seed matches a library before trimming
 - `count` — count the reads in one FASTQ that exactly match a reference library
 - `batch` — run `count` across every FASTQ in a directory, reusing one loaded library
 
@@ -45,6 +46,51 @@ tcrlibs prep-library \
   --seed GAGGACCTGAACAAGGTGTTTCCTCCAGAGGTGGCCGTGTTC \
   --read-length 150
 ```
+
+By default, if any row lacks the seed, `prep-library` exits with status 1 and
+writes no output. The error reports how many rows are missing the seed and up
+to 10 example IDs. If the seed's reverse complement matches some of those rows,
+the error says so and suggests the corrected `--seed`.
+
+Pass `--skip-missing-seed` to drop those rows instead; a warning listing the
+skipped IDs is printed to stderr and the remaining rows are written.
+
+`prep-library` also prints these non-fatal warnings to stderr:
+
+- the seed occurs more than once in a row (the first occurrence is used)
+- a target is shorter than `read_length - len(seed)` (too few bases before the seed)
+- two or more IDs share the same target sequence (`count` keeps only one of them)
+
+> **Seed orientation:** the seed must be on the same strand and in the same
+> orientation as the library sequences. If it isn't, almost no rows will match.
+> `diagnose-library` reports how many rows contain the seed's reverse complement
+> and suggests the corrected seed.
+
+### diagnose-library
+
+Check how a seed matches a full library before running `prep-library`. It
+reports seed hits in both orientations, seed occurrences per row, the target
+length distribution, short targets, and duplicate targets. It writes no files.
+
+```bash
+tcrlibs diagnose-library \
+  --input library_table.csv \
+  --seed GAGGACCTGAACAAGGTGTTTCCTCCAGAGGTGGCCGTGTTC \
+  --read-length 150
+```
+
+Options:
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--input` | required | Full library CSV (`ID`, `Sequence` columns) |
+| `--seed` | required | Constant seed region to check (case-insensitive) |
+| `--read-length` | 150 | Sequencer read length |
+| `--targets` | off | Also check an already-trimmed targets CSV for lengths and duplicates |
+
+Exit codes: `0` when the library is usable (it has rows and every row contains
+the seed); `1` when any row lacks the seed, the library has no rows, or the
+input is invalid (e.g. missing columns, seed longer than the read length).
 
 ### count
 
@@ -127,10 +173,11 @@ pytest
 
 ```
 src/tcrlibs/
-  cli.py        # argparse CLI: count, batch, prep-library
+  cli.py        # argparse CLI: count, batch, prep-library, diagnose-library
   counting.py   # library loading + read counting core
   batch.py      # directory discovery + per-sample loop
   prep.py       # seed-based target trimming
+  diagnose.py   # read-only library/seed diagnostics
 tests/          # pytest smoke tests + fixtures
 scripts/        # original standalone scripts, kept for reference
 ```
