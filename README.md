@@ -75,6 +75,14 @@ Options:
 | `--revcomp` | off | Match the reverse complement |
 | `--min-base-q` | 28 | Minimum Phred score for a "good" base |
 | `--max-bad-freq` | 10.0 | Max % of low-quality bases before dropping a read |
+| `--report-bad-base-freq` | off | Add a per-read `Bad_Base_Frequency` column to the trimmed-reads CSV |
+
+By default the trimmed-reads CSV has three columns: `Read_ID`,
+`Trimmed_Sequence`, `Matched_Library_ID`. Passing `--report-bad-base-freq`
+appends a fourth column, `Bad_Base_Frequency`, giving the fraction of bases in
+each read whose Phred quality is below `--min-base-q` (the same bad-base
+definition used by the QC filter). The flag is off by default; when omitted the
+trimmed CSV output is unchanged.
 
 ### batch
 
@@ -82,6 +90,11 @@ Process every `*R1_001.fastq.gz` file in a directory. The library is loaded once
 and reused across all samples. Each sample writes `{sample}_counts.csv` and
 `{sample}_trimmed.csv` into the output directory. A failure on one sample is
 logged and the batch continues.
+
+Like `count`, `batch` accepts `--report-bad-base-freq` (off by default). When
+supplied, every per-sample `{sample}_trimmed.csv` gains the extra
+`Bad_Base_Frequency` column described in the `count` section above; when
+omitted, the trimmed CSVs keep the original three columns.
 
 ```bash
 tcrlibs batch \

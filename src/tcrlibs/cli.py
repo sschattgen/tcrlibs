@@ -39,6 +39,12 @@ def _add_count_parser(subparsers) -> None:
         default=10.0,
         help='Maximum percentage of "bad" bases allowed in a read before dropping it (default: 10%%)',
     )
+    p.add_argument(
+        "--report-bad-base-freq",
+        action="store_true",
+        default=False,
+        help="Add a per-read Bad_Base_Frequency column to the --output-trimmed CSV (default: off)",
+    )
     p.set_defaults(func=_run_count)
 
 
@@ -70,6 +76,7 @@ def _run_count(args) -> int:
         trimmed_output_path=args.output_trimmed,
         min_base_q=args.min_base_q,
         max_bad_freq=args.max_bad_freq,
+        report_bad_base_freq=args.report_bad_base_freq,
     )
 
     print(f"\nFinished processing {result.total_reads} reads in {result.elapsed_seconds:.2f} seconds.")
@@ -101,6 +108,12 @@ def _add_batch_parser(subparsers) -> None:
     p.add_argument("--revcomp", action="store_true", help="Search for reverse complement")
     p.add_argument("--min-base-q", type=int, default=28, help="Min base quality for QC (default: 28)")
     p.add_argument("--max-bad-freq", type=float, default=10.0, help="Max bad base percentage for QC (default: 10%%)")
+    p.add_argument(
+        "--report-bad-base-freq",
+        action="store_true",
+        default=False,
+        help="Add a per-read Bad_Base_Frequency column to each sample's trimmed CSV (default: off)",
+    )
     p.set_defaults(func=_run_batch)
 
 
@@ -114,6 +127,7 @@ def _run_batch(args) -> int:
         revcomp=args.revcomp,
         min_base_q=args.min_base_q,
         max_bad_freq=args.max_bad_freq,
+        report_bad_base_freq=args.report_bad_base_freq,
     )
     # Non-zero exit if every sample failed (and there was at least one).
     if summary.processed == 0 and summary.failed > 0:

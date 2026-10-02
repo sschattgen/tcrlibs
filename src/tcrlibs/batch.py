@@ -73,6 +73,7 @@ def run_batch(
     revcomp: bool = False,
     min_base_q: int = 28,
     max_bad_freq: float = 10.0,
+    report_bad_base_freq: bool = False,
 ) -> BatchSummary:
     """Process every file matching ``pattern`` in ``input_dir``.
 
@@ -118,6 +119,7 @@ def run_batch(
                 trimmed_output_path=trimmed_csv,
                 min_base_q=min_base_q,
                 max_bad_freq=max_bad_freq,
+                report_bad_base_freq=report_bad_base_freq,
             )
             counting.write_output(output_csv, result.counts)
 

@@ -98,6 +98,7 @@ def process_reads(
     trimmed_output_path: Optional[str] = None,
     min_base_q: int = 28,
     max_bad_freq: float = 10.0,
+    report_bad_base_freq: bool = False,
 ) -> CountResult:
     """Parse a FASTQ(.gz) file and count exact matches with QC filtering.
 
@@ -127,7 +128,12 @@ def process_reads(
     trimmed_file = None
     if trimmed_output_path:
         trimmed_file = open(trimmed_output_path, "w")
-        trimmed_file.write("Read_ID,Trimmed_Sequence,Matched_Library_ID\n")
+        if report_bad_base_freq:
+            trimmed_file.write(
+                "Read_ID,Trimmed_Sequence,Matched_Library_ID,Bad_Base_Frequency\n"
+            )
+        else:
+            trimmed_file.write("Read_ID,Trimmed_Sequence,Matched_Library_ID\n")
 
     start_time = time.time()
 
@@ -176,7 +182,18 @@ def process_reads(
                 if trimmed_file:
                     # Strip newline and the leading '@' from the FASTQ header.
                     clean_id = identifier.strip()[1:]
-                    trimmed_file.write(f"{clean_id},{query_seq},{matched_id}\n")
+                    if report_bad_base_freq:
+                        # Reuse low_quality_count from the QC step; do not recompute.
+                        bad_base_frequency = (
+                            (low_quality_count / len(quality))
+                            if len(quality) > 0
+                            else 0.0
+                        )
+                        trimmed_file.write(
+                            f"{clean_id},{query_seq},{matched_id},{bad_base_frequency}\n"
+                        )
+                    else:
+                        trimmed_file.write(f"{clean_id},{query_seq},{matched_id}\n")
     finally:
         if trimmed_file:
             trimmed_file.close()
